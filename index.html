@@ -10,8 +10,8 @@
 <title>Notes Prediction</title>
 <style>
   :root{
-    --note-list-img:url('https://raw.githubusercontent.com/sc0sc0/Notes-Prediction-App/main/note-list.PNG?v=10');
-    --deck-list-img:url('https://raw.githubusercontent.com/sc0sc0/Notes-Prediction-App/main/deck-list.PNG?v=10');
+    --note-list-img:url('https://raw.githubusercontent.com/sc0sc0/Notes-Prediction-App/main/note-list.PNG?v=11');
+    --deck-list-img:url('https://raw.githubusercontent.com/sc0sc0/Notes-Prediction-App/main/deck-list.PNG?v=11');
     --crop-top:44px;
     --ios-yellow:#f5c242;
     --setup-bg:#111217;
@@ -49,16 +49,24 @@
     padding-right:8px;
   }
 
-  /* Deck note text replacement. Top/bottom UI stays from screenshot; only body text is live. */
-  .note-body-mask{position:absolute;z-index:12;left:0;right:0;top:20.0%;bottom:10.3%;background:#fff;}
+  /* Deck note live content. The base screenshot is blank, so title and list scroll together like one real note. */
+  .note-body-mask{display:none;}
   .deck-scroll{
     position:absolute;z-index:18;
-    left:7.2%;right:6%;top:24.6%;bottom:11.4%;
+    left:6.7%;right:6%;top:14.8%;bottom:11.4%;
     overflow:auto;-webkit-overflow-scrolling:touch;
-    color:#111;background:#fff;
-    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,sans-serif;
+    color:#111;background:transparent;
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Helvetica Neue",Arial,sans-serif;
     font-size:17px;line-height:1.46;font-weight:400;letter-spacing:-.01em;
-    white-space:pre-wrap;padding-bottom:72px;
+    white-space:normal;padding-bottom:72px;
+  }
+  .deck-title-live{
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Neue",Arial,sans-serif;
+    font-size:34px;line-height:1.16;font-weight:750;letter-spacing:-.04em;color:#3c3c43;
+    margin:0 0 36px 0;
+  }
+  .deck-lines-live{
+    white-space:pre-wrap;font-size:17px;line-height:1.46;font-weight:400;letter-spacing:-.01em;color:#111;
   }
 
   /* Setup screen compact: no scrolling needed on phone. */
@@ -119,7 +127,7 @@
 
   <section id="notesList" class="screen">
     <div class="shot-wrap fade">
-      <img class="shot" src="https://raw.githubusercontent.com/sc0sc0/Notes-Prediction-App/main/note-list.PNG?v=10" alt="Notes list">
+      <img class="shot" src="https://raw.githubusercontent.com/sc0sc0/Notes-Prediction-App/main/note-list.PNG?v=11" alt="Notes list">
       <div class="deck-preview-time">9:07 AM</div>
       <div class="tap-zone" id="openDeckZone" style="left:2%;right:2%;top:70.5%;height:12%;"></div>
       <div class="tap-zone" data-secret="dots" style="right:1%;top:6%;width:18%;height:9%;"></div>
@@ -129,7 +137,7 @@
   <section id="deckNote" class="screen">
     <div class="safe-top"></div>
     <div class="shot-wrap fade">
-      <img class="shot" src="https://raw.githubusercontent.com/sc0sc0/Notes-Prediction-App/main/deck-list.PNG?v=10" alt="Deck List note">
+      <img class="shot" src="https://raw.githubusercontent.com/sc0sc0/Notes-Prediction-App/main/deck-list.PNG?v=11" alt="Deck List note">
       <div class="note-body-mask"></div>
       <div class="deck-scroll" id="deckText"></div>
       <div class="tap-zone" id="backZone" style="left:0;top:5.5%;width:20%;height:10%;"></div>
@@ -154,7 +162,7 @@
   function cardName(v,s){
     const map={'2':'Two','3':'Three','4':'Four','5':'Five','6':'Six','7':'Seven','8':'Eight','9':'Nine','10':'Ten'};
     const value = map[v] || v;
-    return value + ' of ' + s;
+    return value + ' of ' + s.toLowerCase();
   }
   function selectedCardName(){ return cardName(selectedValue, selectedSuit); }
   function buildSetup(){
@@ -194,7 +202,9 @@
     for(let i=deck.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [deck[i],deck[j]]=[deck[j],deck[i]]; }
     deck.splice(forcedNumber-1,0,force);
     currentDeck=deck;
-    $('deckText').textContent=deck.map((c,i)=>(i+1)+'. '+c).join('\n');
+    const lines = deck.map((c,i)=>(i+1)+'. '+c).join('\n');
+    $('deckText').innerHTML = '<div class="deck-title-live">Deck List</div><div class="deck-lines-live"></div>';
+    $('deckText').querySelector('.deck-lines-live').textContent = lines;
   }
   function show(id){
     document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
@@ -205,6 +215,7 @@
     document.getElementById('app').style.background = color;
     const meta = document.getElementById('themeColor');
     if(meta) meta.setAttribute('content', color);
+    if(id === 'deckNote') { const scroller = $('deckText'); if(scroller) scroller.scrollTop = 0; }
   }
   $('acceptBtn').onclick=acceptNumber;
   $('clearBtn').onclick=()=>{pendingDigits=''; $('numDisplay').textContent='—'; setStatus('Cleared.');};
