@@ -10,8 +10,8 @@
 <title>Notes Prediction</title>
 <style>
   :root{
-    --note-list-img:url('https://raw.githubusercontent.com/sc0sc0/Notes-Prediction-App/main/note-list.PNG?v=15');
-    --deck-list-img:url('https://raw.githubusercontent.com/sc0sc0/Notes-Prediction-App/main/deck-list.PNG?v=15');
+    --note-list-img:url('https://raw.githubusercontent.com/sc0sc0/Notes-Prediction-App/main/note-list.PNG?v=17');
+    --deck-list-img:url('https://raw.githubusercontent.com/sc0sc0/Notes-Prediction-App/main/deck-list.PNG?v=17');
     --crop-top:44px;
     --ios-yellow:#f5c242;
     --setup-bg:#111217;
@@ -127,7 +127,7 @@
 
   <section id="notesList" class="screen">
     <div class="shot-wrap fade">
-      <img class="shot" src="https://raw.githubusercontent.com/sc0sc0/Notes-Prediction-App/main/note-list.PNG?v=15" alt="Notes list">
+      <img class="shot" src="https://raw.githubusercontent.com/sc0sc0/Notes-Prediction-App/main/note-list.PNG?v=17" alt="Notes list">
       <div class="deck-preview-time">9:07 AM</div>
       <div class="tap-zone" id="openDeckZone" style="left:2%;right:2%;top:70.5%;height:12%;"></div>
       <div class="tap-zone" data-secret="dots" style="right:0;top:0;width:32%;height:20%;z-index:80;"></div>
@@ -137,7 +137,7 @@
   <section id="deckNote" class="screen">
     <div class="safe-top"></div>
     <div class="shot-wrap fade">
-      <img class="shot" src="https://raw.githubusercontent.com/sc0sc0/Notes-Prediction-App/main/deck-list.PNG?v=15" alt="Deck List note">
+      <img class="shot" src="https://raw.githubusercontent.com/sc0sc0/Notes-Prediction-App/main/deck-list.PNG?v=17" alt="Deck List note">
       <div class="note-body-mask"></div>
       <div class="deck-scroll" id="deckText"></div>
       <div class="tap-zone" id="backZone" style="left:0;top:5.5%;width:20%;height:10%;"></div>
@@ -223,12 +223,17 @@
   function makeRichNoteHTML(text){
     const parts = String(text).split('\n\n');
     const title = escapeHTML(parts.shift() || 'Deck List');
-    const body = escapeHTML(parts.join('\n\n')).replace(/\n/g, '<br>');
+    const bodyText = parts.join('\n\n').trim();
+    const bodyParagraphs = bodyText
+      .split('\n')
+      .filter(line => line.trim().length > 0)
+      .map(line => '<p style="font-size:17px;line-height:1.46;font-weight:400;letter-spacing:-0.01em;margin:0;">' + escapeHTML(line) + '</p>')
+      .join('');
     return '<!doctype html><html><head><meta charset="utf-8"></head>' +
       '<body style="font-family:-apple-system,BlinkMacSystemFont,\'SF Pro Text\',\'Helvetica Neue\',Arial,sans-serif;color:#111;margin:0;">' +
-      '<div style="font-family:-apple-system,BlinkMacSystemFont,\'SF Pro Display\',\'Helvetica Neue\',Arial,sans-serif;font-size:34px;line-height:1.16;font-weight:750;letter-spacing:-0.04em;margin:0;color:#3c3c43;">' + title + '</div>' +
-      '<div style="font-size:17px;line-height:1.46;font-weight:400;letter-spacing:-0.01em;white-space:normal;"><br></div>' +
-      '<div style="font-size:17px;line-height:1.46;font-weight:400;letter-spacing:-0.01em;white-space:normal;">' + body + '</div>' +
+      '<p style="font-family:-apple-system,BlinkMacSystemFont,\'SF Pro Display\',\'Helvetica Neue\',Arial,sans-serif;font-size:34px;line-height:1.16;font-weight:750;letter-spacing:-0.04em;margin:0;color:#3c3c43;">' + title + '</p>' +
+      '<p style="font-size:17px;line-height:1.46;font-weight:400;margin:0;">&nbsp;</p>' +
+      bodyParagraphs +
       '</body></html>';
   }
   function copyToClipboard(text){
