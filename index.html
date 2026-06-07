@@ -6,62 +6,80 @@
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-<meta name="theme-color" content="#f2f2f7" />
+<meta name="theme-color" content="#f2f2f7" id="themeColor" />
 <title>Notes Prediction</title>
 <style>
   :root{
-    --ios-yellow:#f5bf18;
-    --ios-bg:#f2f2f7;
-    --text:#111;
-    --muted:#8e8e93;
-    --crop-top:5.2%; /* hides the screenshot status bar so iOS supplies the real one */
+    --note-list-img:url('https://raw.githubusercontent.com/sc0sc0/Notes-Prediction-App/main/note-list.PNG?v=9');
+    --deck-list-img:url('https://raw.githubusercontent.com/sc0sc0/Notes-Prediction-App/main/deck-list.PNG?v=9');
+    --crop-top:44px;
+    --ios-yellow:#f5c242;
+    --setup-bg:#111217;
+    --setup-card:#202128;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-  html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--ios-bg);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Helvetica Neue",Arial,sans-serif;color:var(--text);}
-  button{font-family:inherit;touch-action:manipulation;}
-  #app{position:fixed;inset:0;background:var(--ios-bg);overflow:hidden;touch-action:manipulation;}
-  .screen{position:absolute;inset:0;display:none;background:var(--ios-bg);overflow:hidden;}
+  html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#f2f2f7;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Helvetica Neue",Arial,sans-serif;color:#111;}
+  button{font-family:inherit;}
+  #app{position:fixed;inset:0;background:#f2f2f7;overflow:hidden;touch-action:manipulation;}
+  .screen{position:absolute;inset:0;display:none;overflow:hidden;background:#f2f2f7;}
   .screen.active{display:block;}
-  .fade{animation:fadeIn .14s ease-out both;}
-  @keyframes fadeIn{from{opacity:.2}to{opacity:1}}
+  #deckNote{background:#fff;}
+  #deckNote .shot-wrap{background:#fff;}
+  .fade{animation:fadeIn .16s ease-out both;}
+  @keyframes fadeIn{from{opacity:.12}to{opacity:1}}
 
-  /* Screenshot screens */
-  .phone-canvas{position:absolute;inset:0;width:100vw;height:100dvh;overflow:hidden;background:var(--ios-bg);}
-  .shot{position:absolute;left:0;top:calc(-1 * var(--crop-top));width:100%;height:calc(100% + var(--crop-top));object-fit:cover;object-position:top center;display:block;user-select:none;pointer-events:none;}
+  /* Screenshot screens. The image is shifted upward to remove the screenshot's own status bar.
+     iOS supplies the real status bar when launched from Home Screen. */
+  .shot-wrap{position:absolute;inset:0;overflow:hidden;background:#f2f2f7;}
+  .shot{position:absolute;left:0;top:calc(-1 * var(--crop-top));width:100%;height:auto;display:block;user-select:none;pointer-events:none;}
   .tap-zone{position:absolute;z-index:30;background:rgba(255,0,0,0);}
 
-  /* Notes list fixed timestamp under Deck List */
-  .deck-preview-time{position:absolute;z-index:15;left:10.8%;top:70.05%;color:#8e8e93;font-size:17px;font-weight:400;letter-spacing:-.02em;line-height:1;background:transparent;}
+  /* Notes-list Deck List timestamp overlay. Tuned to sit directly under "Deck List" inside the card. */
+  .deck-preview-time{
+    position:absolute;z-index:22;
+    left:11.1%; top:78.9%;
+    color:#8e8e93;
+    font-size:12px;
+    line-height:1;
+    font-weight:400;
+    letter-spacing:-.01em;
+    background:#fff;
+    padding-right:8px;
+  }
 
-  /* Deck note overlay: keep native screenshot title/top/bottom, replace only the card-list body */
-  .note-body-mask{position:absolute;z-index:8;left:0;right:0;top:20.0%;bottom:11.0%;background:#fff;}
-  .deck-scroll{position:absolute;z-index:12;left:9.8%;right:6.5%;top:20.65%;bottom:12%;overflow:auto;-webkit-overflow-scrolling:touch;background:#fff;color:#3c3c43;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,sans-serif;font-size:21px;line-height:1.45;font-weight:400;letter-spacing:-.02em;white-space:pre-wrap;padding-bottom:60px;}
+  /* Deck note text replacement. Top/bottom UI stays from screenshot; only body text is live. */
+  .note-body-mask{position:absolute;z-index:12;left:0;right:0;top:20.0%;bottom:10.3%;background:#fff;}
+  .deck-scroll{
+    position:absolute;z-index:18;
+    left:7.2%;right:6%;top:24.6%;bottom:11.4%;
+    overflow:auto;-webkit-overflow-scrolling:touch;
+    color:#111;background:#fff;
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,sans-serif;
+    font-size:17px;line-height:1.46;font-weight:400;letter-spacing:-.01em;
+    white-space:pre-wrap;padding-bottom:72px;
+  }
 
-  /* Setup screen, compact so no scrolling is needed */
-  #setup{background:linear-gradient(#fafafa,#f5f5f7);padding:calc(env(safe-area-inset-top) + 12px) 16px calc(env(safe-area-inset-bottom) + 12px);overflow:hidden;}
+  /* Setup screen compact: no scrolling needed on phone. */
+  #setup{background:linear-gradient(#17181d,#060608);color:white;padding:calc(env(safe-area-inset-top) + 8px) 12px 10px;overflow:hidden;}
   .setup-inner{height:100%;max-width:520px;margin:0 auto;display:flex;flex-direction:column;gap:8px;}
-  .setup-title{font-size:29px;font-weight:800;line-height:1.05;letter-spacing:-.7px;margin:0;}
-  .setup-sub{font-size:14px;color:#777;line-height:1.2;margin:0 0 4px;}
-  .section-title{font-size:19px;font-weight:800;margin:2px 0 6px;letter-spacing:-.25px;}
-  .choice-grid{display:grid;gap:7px;}
+  .setup-title{font-size:25px;font-weight:800;line-height:1;margin:0;letter-spacing:-.4px;}
+  .setup-sub{color:#aaa;font-size:12px;line-height:1.2;margin:0 0 2px;}
+  .panel{background:#202128;border:1px solid #343640;border-radius:16px;padding:10px;}
+  .label{font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:.08em;font-weight:700;margin:0 0 6px;}
+  #selectedCard{font-size:21px;font-weight:800;margin:0 0 8px;}
+  .choice-grid{display:grid;gap:6px;margin-bottom:8px;}
   .values{grid-template-columns:repeat(7,1fr);}
-  .values .choice{min-height:39px;}
-  .suits{grid-template-columns:repeat(4,1fr);margin-top:7px;}
-  .suits .choice{min-height:42px;font-size:24px;}
+  .suits{grid-template-columns:repeat(4,1fr);}
   .digits{grid-template-columns:repeat(5,1fr);}
-  .digits .choice{min-height:44px;font-size:21px;}
-  .choice{border:1px solid #d9d9de;border-radius:11px;background:#fff;color:#111;font-size:19px;font-weight:500;box-shadow:0 1px 2px rgba(0,0,0,.03);}
-  .choice.selected{background:var(--ios-yellow);border-color:var(--ios-yellow);color:#fff;box-shadow:0 4px 10px rgba(226,173,0,.25);}
-  .selected-line{font-size:17px;color:#888;margin:6px 0 2px;}
-  .selected-line strong{color:#111;}
-  .number-sub{font-size:14px;color:#777;margin:-2px 0 7px;line-height:1.15;}
-  .entered-line{font-size:17px;color:#888;margin:8px 0 8px;}
-  .entered-line strong{color:#111;}
-  .action-row{display:grid;grid-template-columns:1fr 1.85fr;gap:12px;margin-top:auto;}
-  .action{height:50px;border-radius:13px;border:1px solid #d1d1d6;background:#fff;color:#111;font-size:20px;font-weight:500;}
-  .accept{background:var(--ios-yellow);border-color:var(--ios-yellow);color:#fff;}
-  .hint{font-size:13px;color:#888;text-align:center;line-height:1.2;margin-top:2px;min-height:16px;}
-  .toast{position:absolute;left:50%;bottom:28px;transform:translateX(-50%);background:rgba(20,20,20,.88);color:white;padding:10px 14px;border-radius:18px;font-size:14px;opacity:0;pointer-events:none;transition:.2s;z-index:200;}
+  .choice{border:0;border-radius:10px;background:#30313a;color:#fff;font-size:16px;font-weight:750;min-height:36px;padding:7px 0;}
+  .choice.selected{background:var(--ios-yellow);color:#111;}
+  .number-display{height:42px;border-radius:12px;background:#111217;border:1px solid #30313a;display:flex;align-items:center;justify-content:center;font-size:25px;font-weight:800;margin:0 0 8px;letter-spacing:.04em;}
+  .small-row{display:flex;gap:8px;margin-top:4px;}
+  .small{flex:1;border:1px solid #3b3c45;border-radius:12px;background:#18191f;color:#ddd;padding:11px 8px;font-weight:800;font-size:15px;min-height:42px;}
+  .accept{background:var(--ios-yellow);color:#111;border:0;}
+  .hint{font-size:11px;color:#aaa;line-height:1.15;margin:4px 0 0;}
+  .danger{color:#ffb4b4}.ready{color:#b4ffca}
+  .toast{position:absolute;left:50%;bottom:24px;transform:translateX(-50%);background:rgba(20,20,20,.88);color:white;padding:10px 14px;border-radius:18px;font-size:14px;opacity:0;pointer-events:none;transition:.2s;z-index:200;}
   .toast.show{opacity:1;}
 </style>
 </head>
@@ -70,172 +88,136 @@
   <section id="setup" class="screen active">
     <div class="setup-inner">
       <div>
-        <h1 class="setup-title">Setup Prediction</h1>
-        <p class="setup-sub">Enter your prediction and spectator number.</p>
+        <div class="setup-title">Prediction Setup</div>
+        <div class="setup-sub">Choose the prediction card, enter the named number, then Accept.</div>
       </div>
 
-      <div>
-        <div class="section-title">Prediction Card</div>
+      <div class="panel">
+        <div class="label">Prediction Card</div>
+        <div id="selectedCard">Ace of Spades</div>
+        <div class="label">Value</div>
         <div class="choice-grid values" id="valueGrid"></div>
+        <div class="label">Suit</div>
         <div class="choice-grid suits" id="suitGrid"></div>
-        <div class="selected-line">Selected: <strong id="selectedCard">Ace of hearts</strong></div>
       </div>
 
-      <div>
-        <div class="section-title">Spectator Number</div>
-        <div class="number-sub">Enter the number your spectator thinks of.</div>
+      <div class="panel">
+        <div class="label">Spectator Number</div>
+        <div class="number-display" id="numDisplay">—</div>
         <div class="choice-grid digits" id="digitGrid"></div>
-        <div class="entered-line">Entered: <strong id="numDisplay">—</strong></div>
+        <div class="small-row">
+          <button class="small accept" id="acceptBtn">Accept</button>
+          <button class="small" id="clearBtn">Clear</button>
+          <button class="small" id="testBtn">Show Notes</button>
+        </div>
+        <div class="hint ready" id="statusMsg">Ready.</div>
       </div>
-
-      <div class="action-row">
-        <button class="action" id="clearBtn">Clear</button>
-        <button class="action accept" id="acceptBtn">Accept</button>
-      </div>
-      <div class="hint" id="statusMsg">This will open your notes.</div>
     </div>
   </section>
 
   <section id="notesList" class="screen">
-    <div class="phone-canvas fade">
-      <img class="shot" src="https://raw.githubusercontent.com/sc0sc0/Notes-Prediction-App/main/note-list.PNG?v=7" alt="Notes list">
+    <div class="shot-wrap fade">
+      <img class="shot" src="https://raw.githubusercontent.com/sc0sc0/Notes-Prediction-App/main/note-list.PNG?v=9" alt="Notes list">
       <div class="deck-preview-time">9:07 AM</div>
-      <div class="tap-zone" id="openDeckZone" style="left:4%;right:4%;top:66%;height:11%;"></div>
-      <div class="tap-zone" data-secret="dots" style="right:2%;top:4%;width:17%;height:10%;"></div>
+      <div class="tap-zone" id="openDeckZone" style="left:2%;right:2%;top:70.5%;height:12%;"></div>
+      <div class="tap-zone" data-secret="dots" style="right:1%;top:6%;width:18%;height:9%;"></div>
     </div>
   </section>
 
   <section id="deckNote" class="screen">
-    <div class="phone-canvas fade">
-      <img class="shot" src="https://raw.githubusercontent.com/sc0sc0/Notes-Prediction-App/main/deck-list.PNG?v=7" alt="Deck List note">
+    <div class="shot-wrap fade">
+      <img class="shot" src="https://raw.githubusercontent.com/sc0sc0/Notes-Prediction-App/main/deck-list.PNG?v=9" alt="Deck List note">
       <div class="note-body-mask"></div>
       <div class="deck-scroll" id="deckText"></div>
-      <div class="tap-zone" id="backZone" style="left:0;top:4%;width:19%;height:10%;"></div>
-      <div class="tap-zone" data-secret="dots" style="right:2%;top:4%;width:18%;height:10%;"></div>
+      <div class="tap-zone" id="backZone" style="left:0;top:5.5%;width:20%;height:10%;"></div>
+      <div class="tap-zone" data-secret="dots" style="right:0;top:5.5%;width:18%;height:10%;"></div>
     </div>
   </section>
   <div class="toast" id="toast">Setup</div>
 </div>
-
 <script>
 (function(){
   const values = ['Ace','2','3','4','5','6','7','8','9','10','Jack','Queen','King'];
   const valueLabels = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
-  const suits = ['spades','hearts','diamonds','clubs'];
+  const suits = ['Spades','Hearts','Diamonds','Clubs'];
   const suitLabels = ['♠','♥','♦','♣'];
-  const digitOrder = [0,1,2,3,4,5,6,7,8,9];
   let selectedValue = 'Ace';
-  let selectedSuit = 'hearts';
+  let selectedSuit = 'Spades';
   let pendingDigits = '';
   let forcedNumber = 1;
   let currentDeck = [];
   const $ = id => document.getElementById(id);
 
   function cardName(v,s){
-    const map = {'2':'Two','3':'Three','4':'Four','5':'Five','6':'Six','7':'Seven','8':'Eight','9':'Nine','10':'Ten'};
+    const map={'2':'Two','3':'Three','4':'Four','5':'Five','6':'Six','7':'Seven','8':'Eight','9':'Nine','10':'Ten'};
     const value = map[v] || v;
     return value + ' of ' + s;
   }
-  function displayCardName(){ return cardName(selectedValue, selectedSuit); }
+  function selectedCardName(){ return cardName(selectedValue, selectedSuit); }
   function buildSetup(){
     const vg=$('valueGrid'); vg.innerHTML='';
-    valueLabels.forEach((lab,i)=>{
-      const b=document.createElement('button');
-      b.className='choice'+(values[i]===selectedValue?' selected':'');
-      b.textContent=lab;
-      b.onclick=()=>{selectedValue=values[i]; updateSetup();};
-      vg.appendChild(b);
-    });
+    valueLabels.forEach((lab,i)=>{ const b=document.createElement('button'); b.className='choice'+(values[i]===selectedValue?' selected':''); b.textContent=lab; b.onclick=()=>{selectedValue=values[i]; updateSetup();}; vg.appendChild(b); });
     const sg=$('suitGrid'); sg.innerHTML='';
-    suitLabels.forEach((lab,i)=>{
-      const b=document.createElement('button');
-      b.className='choice'+(suits[i]===selectedSuit?' selected':'');
-      b.textContent=lab;
-      b.onclick=()=>{selectedSuit=suits[i]; updateSetup();};
-      sg.appendChild(b);
-    });
+    suitLabels.forEach((lab,i)=>{ const b=document.createElement('button'); b.className='choice'+(suits[i]===selectedSuit?' selected':''); b.textContent=lab; b.onclick=()=>{selectedSuit=suits[i]; updateSetup();}; sg.appendChild(b); });
     const dg=$('digitGrid'); dg.innerHTML='';
-    digitOrder.forEach(n=>{
-      const b=document.createElement('button');
-      b.className='choice';
-      b.textContent=String(n);
-      b.onclick=()=>digit(n);
-      dg.appendChild(b);
-    });
+    for(let n=0;n<=9;n++){ const b=document.createElement('button'); b.className='choice'; b.textContent=String(n); b.onclick=()=>digit(n); dg.appendChild(b); }
   }
   function updateSetup(){
-    $('selectedCard').textContent=displayCardName();
+    $('selectedCard').textContent=selectedCardName();
     document.querySelectorAll('#valueGrid .choice').forEach((b,i)=>b.classList.toggle('selected', values[i]===selectedValue));
     document.querySelectorAll('#suitGrid .choice').forEach((b,i)=>b.classList.toggle('selected', suits[i]===selectedSuit));
   }
-  function setStatus(msg, bad=false){
-    const el=$('statusMsg');
-    el.textContent=msg;
-    el.style.color = bad ? '#c93b3b' : '#888';
-  }
+  function setStatus(msg,bad=false){ const el=$('statusMsg'); el.textContent=msg; el.className='hint '+(bad?'danger':'ready'); }
   function digit(n){
     if(pendingDigits.length >= 2) pendingDigits = '';
-    if(pendingDigits.length === 0 && n === 0){
-      setStatus('Numbers must be 1-52.', true);
-      return;
-    }
+    if(pendingDigits.length === 0 && n === 0){ setStatus('Numbers must be 1-52.', true); return; }
     pendingDigits += String(n);
     $('numDisplay').textContent = pendingDigits;
-    const val = parseInt(pendingDigits, 10);
-    setStatus((val>=1 && val<=52) ? 'This will open your notes.' : 'Invalid number. Use 1-52.', !(val>=1 && val<=52));
+    const val=parseInt(pendingDigits,10);
+    setStatus((val>=1 && val<=52) ? 'Tap Accept.' : 'Invalid number. Use 1-52.', !(val>=1 && val<=52));
   }
   function acceptNumber(){
     if(!pendingDigits){ setStatus('Enter a number first.', true); return; }
-    const val = parseInt(pendingDigits, 10);
-    if(val>=1 && val<=52){
-      forcedNumber = val;
-      pendingDigits = '';
-      generateDeck();
-      show('notesList');
-    } else {
-      setStatus('Invalid number. Use 1-52.', true);
-    }
+    const val=parseInt(pendingDigits,10);
+    if(val>=1 && val<=52){ forcedNumber=val; finishNumber(); }
+    else setStatus('Invalid number. Use 1-52.', true);
   }
+  function finishNumber(){ pendingDigits=''; generateDeck(); setStatus('Generated.'); show('notesList'); }
   function generateDeck(){
-    const force=displayCardName();
+    const force=selectedCardName();
     let deck=[];
     suits.forEach(s=>values.forEach(v=>deck.push(cardName(v,s))));
     deck=deck.filter(c=>c!==force);
-    for(let i=deck.length-1;i>0;i--){
-      const j=Math.floor(Math.random()*(i+1));
-      [deck[i],deck[j]]=[deck[j],deck[i]];
-    }
+    for(let i=deck.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [deck[i],deck[j]]=[deck[j],deck[i]]; }
     deck.splice(forcedNumber-1,0,force);
     currentDeck=deck;
-    $('deckText').textContent=deck.map((c,i)=>(i+1)+'.  '+c).join('\n');
+    $('deckText').textContent=deck.map((c,i)=>(i+1)+'. '+c).join('\n');
   }
   function show(id){
     document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
     $(id).classList.add('active');
-    if(id==='deckNote') $('deckText').scrollTop=0;
+    const color = (id === 'deckNote') ? '#ffffff' : '#f2f2f7';
+    document.documentElement.style.background = color;
+    document.body.style.background = color;
+    document.getElementById('app').style.background = color;
+    const meta = document.getElementById('themeColor');
+    if(meta) meta.setAttribute('content', color);
   }
   $('acceptBtn').onclick=acceptNumber;
-  $('clearBtn').onclick=()=>{ pendingDigits=''; $('numDisplay').textContent='—'; setStatus('This will open your notes.'); };
+  $('clearBtn').onclick=()=>{pendingDigits=''; $('numDisplay').textContent='—'; setStatus('Cleared.');};
+  $('testBtn').onclick=()=>{ if(!currentDeck.length) generateDeck(); show('notesList'); };
   $('openDeckZone').onclick=()=>show('deckNote');
   $('backZone').onclick=()=>show('notesList');
 
   let tapTimes=[];
-  function secretTap(e){
-    const now=Date.now();
-    tapTimes=tapTimes.filter(t=>now-t<750);
-    tapTimes.push(now);
-    if(tapTimes.length>=3){
-      tapTimes=[];
-      showToast('Setup');
-      setTimeout(()=>show('setup'),100);
-    }
+  function secretTap(){
+    const now=Date.now(); tapTimes=tapTimes.filter(t=>now-t<750); tapTimes.push(now);
+    if(tapTimes.length>=3){ tapTimes=[]; showToast('Setup'); setTimeout(()=>show('setup'),120); }
   }
   document.querySelectorAll('[data-secret="dots"]').forEach(z=>z.addEventListener('click',secretTap));
-  function showToast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),500); }
+  function showToast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),550); }
 
-  buildSetup();
-  updateSetup();
-  generateDeck();
+  buildSetup(); updateSetup(); generateDeck(); show('setup');
 })();
 </script>
 </body>
