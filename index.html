@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+<title>Notes Prediction v6</title>
+<style>
+  :root{
+    --ios-yellow:#f6c344;
+    --ios-bg:#f2f2f7;
+    --text:#111;
+    --muted:#6b6b70;
+    --blue:#007aff;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Helvetica Neue",Arial,sans-serif;color:var(--text);}
+  button{font-family:inherit;}
+  #app{position:fixed;inset:0;background:#000;overflow:hidden;touch-action:manipulation;}
+  .screen{position:absolute;inset:0;display:none;background:#000;overflow:hidden;}
+  .screen.active{display:block;}
+  .phone-canvas{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);height:100vh;width:calc(100vh * 0.4618);max-width:100vw;max-height:calc(100vw / 0.4618);}
+  .shot{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block;}
+  .tap-zone{position:absolute;z-index:20;background:rgba(255,0,0,0);}
+  .fade{animation:fadeIn .18s ease-out both;}
+  @keyframes fadeIn{from{opacity:.15}to{opacity:1}}
+
+  /* SETUP */
+  #setup{background:linear-gradient(#15151a,#050506);color:white;padding:calc(env(safe-area-inset-top) + 18px) 18px 24px;overflow:auto;}
+  .setup-inner{max-width:520px;margin:0 auto;}
+  .setup-title{font-size:31px;font-weight:800;margin:10px 0 3px;letter-spacing:-.5px;}
+  .setup-sub{color:#aaa;font-size:15px;line-height:1.35;margin-bottom:22px;}
+  .card-preview{background:#22232a;border:1px solid #343640;border-radius:18px;padding:16px;margin-bottom:18px;}
+  .label{font-size:13px;color:#aaa;text-transform:uppercase;letter-spacing:.08em;font-weight:700;margin:4px 0 9px;}
+  .choice-grid{display:grid;gap:8px;margin-bottom:14px;}
+  .values{grid-template-columns:repeat(7,1fr);}
+  .suits{grid-template-columns:repeat(4,1fr);}
+  .digits{grid-template-columns:repeat(5,1fr);}
+  .choice{border:0;border-radius:13px;background:#2f3038;color:white;font-size:18px;font-weight:700;padding:13px 0;min-height:48px;}
+  .choice.selected{background:var(--ios-yellow);color:#111;}
+  .number-panel{background:#22232a;border:1px solid #343640;border-radius:18px;padding:16px;margin-top:14px;}
+  .number-display{height:56px;border-radius:14px;background:#111217;border:1px solid #30313a;display:flex;align-items:center;justify-content:center;font-size:29px;font-weight:800;margin:0 0 14px;letter-spacing:.04em;}
+  .hint{font-size:13px;color:#aaa;line-height:1.35;margin-top:8px;}
+  .small-row{display:flex;gap:10px;margin-top:10px;}
+  .small{flex:1;border:1px solid #3b3c45;border-radius:13px;background:#18191f;color:#ddd;padding:13px;font-weight:700;font-size:15px;}
+  .danger{color:#ffb4b4;}
+  .ready{color:#b4ffca;}
+
+  /* overlays on screenshot list */
+  .status-time{position:absolute;z-index:10;left:10.45%;top:2.25%;font-weight:600;font-size:15px;letter-spacing:-.02em;color:#111;line-height:1;}
+  .patch{position:absolute;z-index:9;background:#f2f2f7;}
+  .patch.white{background:#fff;}
+  .deck-preview-time{position:absolute;z-index:11;color:#8e8e93;font-size:17px;font-weight:400;line-height:1;}
+
+  /* Note body overlay */
+  .note-body-mask{position:absolute;z-index:8;left:0;right:0;top:21.55%;bottom:11.2%;background:#fff;}
+  .deck-scroll{position:absolute;z-index:12;left:7.7%;right:5.5%;top:24.8%;bottom:12.2%;overflow:auto;-webkit-overflow-scrolling:touch;background:#fff;color:#111;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,sans-serif;font-size:22px;line-height:1.45;white-space:pre-wrap;padding-bottom:70px;}
+
+  .toast{position:absolute;left:50%;bottom:28px;transform:translateX(-50%);background:rgba(20,20,20,.88);color:white;padding:10px 14px;border-radius:18px;font-size:14px;opacity:0;pointer-events:none;transition:.2s;z-index:200;}
+  .toast.show{opacity:1;}
+
+  @media (max-aspect-ratio: 4618/10000){
+    .phone-canvas{width:100vw;height:calc(100vw / 0.4618);}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <section id="setup" class="screen active">
+    <div class="setup-inner">
+      <div class="setup-title">Prediction Setup</div>
+      <div class="setup-sub">Choose the face-down prediction card, then enter the spectator's number. Use the button keypad only. Enter the spectator's number, then tap Accept to show the Notes list.</div>
+
+      <div class="card-preview">
+        <div class="label">Prediction Card</div>
+        <div id="selectedCard" style="font-size:26px;font-weight:800;margin-bottom:14px;">Ace of Spades</div>
+        <div class="label">Value</div>
+        <div class="choice-grid values" id="valueGrid"></div>
+        <div class="label">Suit</div>
+        <div class="choice-grid suits" id="suitGrid"></div>
+      </div>
+
+      <div class="number-panel">
+        <div class="label">Spectator Number</div>
+        <div class="number-display" id="numDisplay">—</div>
+        <div class="label">Digits</div>
+        <div class="choice-grid digits" id="digitGrid"></div>
+        <div class="small-row">
+          <button class="small" id="acceptBtn">Accept</button>
+          <button class="small" id="clearBtn">Clear</button>
+          <button class="small" id="testBtn">Show Notes</button>
+        </div>
+        <div class="hint">Enter 1-52 using the buttons. Tap Accept to switch to the Notes list. Clear fixes mistakes.</div>
+        <div class="hint ready" id="statusMsg">Ready.</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="notesList" class="screen">
+    <div class="phone-canvas fade">
+      <img class="shot" crossorigin="anonymous" src="https://raw.githubusercontent.com/sc0sc0/Notes-Prediction-App/main/note-list.PNG?v=6" alt="Notes list">
+      <div class="status-time" id="timeList">11:08</div>
+      <!-- Deck List timestamp overlay. The screenshot should have this area whitened out. -->
+      <div class="deck-preview-time" style="left:10.8%;top:74.35%;">9:07 AM</div>
+      <!-- Tap areas -->
+      <div class="tap-zone" id="openDeckZone" style="left:3%;right:3%;top:75.2%;height:12%;"></div>
+      <div class="tap-zone" data-secret="dots" style="right:3%;top:5.8%;width:16%;height:8%;"></div>
+    </div>
+  </section>
+
+  <section id="deckNote" class="screen">
+    <div class="phone-canvas fade">
+      <img class="shot" crossorigin="anonymous" src="https://raw.githubusercontent.com/sc0sc0/Notes-Prediction-App/main/deck-list.PNG?v=6" alt="Deck list note">
+      <div class="status-time" id="timeDeck">11:08</div>
+      <div class="note-body-mask"></div>
+      <div class="deck-scroll" id="deckText"></div>
+      <div class="tap-zone" id="backZone" style="left:0;top:5.5%;width:18%;height:10%;"></div>
+      <div class="tap-zone" data-secret="dots" style="right:2%;top:5.4%;width:16%;height:9%;"></div>
+    </div>
+  </section>
+  <div class="toast" id="toast">Setup</div>
+</div>
+<script>
+(function(){
+  const listImg='https://raw.githubusercontent.com/sc0sc0/Notes-Prediction-App/main/note-list.PNG?v=6';
+  const deckImg='https://raw.githubusercontent.com/sc0sc0/Notes-Prediction-App/main/deck-list.PNG?v=6';
+  // Preload
+  [listImg, deckImg].forEach(src=>{const i=new Image(); i.src=src;});
+
+  const values = ['Ace','2','3','4','5','6','7','8','9','10','Jack','Queen','King'];
+  const valueLabels = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+  const suits = ['Spades','Hearts','Diamonds','Clubs'];
+  const suitLabels = ['♠','♥','♦','♣'];
+  let selectedValue = 'Ace';
+  let selectedSuit = 'Spades';
+  let pendingDigits = '';
+  let forcedNumber = 1;
+  let currentDeck = [];
+  const $ = id => document.getElementById(id);
+
+  function cardName(v,s){
+    const value = (v==='2'||v==='3'||v==='4'||v==='5'||v==='6'||v==='7'||v==='8'||v==='9'||v==='10') ? ({'2':'Two','3':'Three','4':'Four','5':'Five','6':'Six','7':'Seven','8':'Eight','9':'Nine','10':'Ten'}[v]) : v;
+    return value + ' of ' + s;
+  }
+  function selectedCardName(){ return cardName(selectedValue, selectedSuit); }
+  function buildSetup(){
+    const vg=$('valueGrid'); vg.innerHTML='';
+    valueLabels.forEach((lab,i)=>{ const b=document.createElement('button'); b.className='choice'+(values[i]===selectedValue?' selected':''); b.textContent=lab; b.onclick=()=>{selectedValue=values[i]; updateSetup();}; vg.appendChild(b); });
+    const sg=$('suitGrid'); sg.innerHTML='';
+    suitLabels.forEach((lab,i)=>{ const b=document.createElement('button'); b.className='choice'+(suits[i]===selectedSuit?' selected':''); b.textContent=lab; b.onclick=()=>{selectedSuit=suits[i]; updateSetup();}; sg.appendChild(b); });
+    const dg=$('digitGrid'); dg.innerHTML='';
+    for(let n=0;n<=9;n++){ const b=document.createElement('button'); b.className='choice'; b.textContent=String(n); b.onclick=()=>digit(n); dg.appendChild(b); }
+  }
+  function updateSetup(){
+    $('selectedCard').textContent=selectedCardName();
+    document.querySelectorAll('#valueGrid .choice').forEach((b,i)=>b.classList.toggle('selected', values[i]===selectedValue));
+    document.querySelectorAll('#suitGrid .choice').forEach((b,i)=>b.classList.toggle('selected', suits[i]===selectedSuit));
+  }
+  function setStatus(msg, bad=false){ const el=$('statusMsg'); el.textContent=msg; el.className='hint '+(bad?'danger':'ready'); }
+  function digit(n){
+    if(pendingDigits.length >= 2){
+      pendingDigits = '';
+    }
+    if(pendingDigits.length === 0 && n === 0){
+      setStatus('Numbers must be 1-52.', true);
+      return;
+    }
+    pendingDigits += String(n);
+    $('numDisplay').textContent = pendingDigits;
+    const val = parseInt(pendingDigits, 10);
+    if(val < 1 || val > 52){
+      setStatus('Invalid number. Use 1-52.', true);
+    } else {
+      setStatus('Tap Accept to show Notes.');
+    }
+  }
+  function acceptNumber(){
+    if(!pendingDigits){
+      setStatus('Enter a number first.', true);
+      return;
+    }
+    const val = parseInt(pendingDigits, 10);
+    if(val >= 1 && val <= 52){
+      forcedNumber = val;
+      finishNumber();
+    } else {
+      setStatus('Invalid number. Use 1-52.', true);
+    }
+  }
+  function finishNumber(){
+    pendingDigits='';
+    generateDeck();
+    setStatus('Generated.');
+    show('notesList');
+  }
+  function generateDeck(){
+    const force=selectedCardName();
+    let deck=[];
+    suits.forEach(s=>values.forEach(v=>deck.push(cardName(v,s))));
+    deck=deck.filter(c=>c!==force);
+    for(let i=deck.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [deck[i],deck[j]]=[deck[j],deck[i]]; }
+    deck.splice(forcedNumber-1,0,force);
+    currentDeck=deck;
+    $('deckText').textContent=deck.map((c,i)=>`${i+1}. ${c}`).join('\n');
+  }
+  function show(id){
+    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+    $(id).classList.add('active');
+    updateClock();
+  }
+  function updateClock(){
+    const d=new Date();
+    let h=d.getHours(), m=String(d.getMinutes()).padStart(2,'0');
+    let hh=h%12; if(hh===0) hh=12;
+    const t=`${hh}:${m}`;
+    $('timeList').textContent=t;
+    $('timeDeck').textContent=t;
+  }
+  setInterval(updateClock,15000); updateClock();
+
+  $('acceptBtn').onclick=acceptNumber;
+  $('clearBtn').onclick=()=>{pendingDigits=''; $('numDisplay').textContent='—'; setStatus('Cleared.');};
+  $('testBtn').onclick=()=>{ if(!currentDeck.length) generateDeck(); show('notesList'); };
+  $('openDeckZone').onclick=()=>show('deckNote');
+  $('backZone').onclick=()=>show('notesList');
+
+  let tapTimes=[];
+  function secretTap(e){
+    const now=Date.now();
+    tapTimes=tapTimes.filter(t=>now-t<750);
+    tapTimes.push(now);
+    if(tapTimes.length>=3){
+      tapTimes=[];
+      showToast('Setup');
+      setTimeout(()=>show('setup'),120);
+    }
+  }
+  document.querySelectorAll('[data-secret="dots"]').forEach(z=>z.addEventListener('click',secretTap));
+  function showToast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),550); }
+
+  buildSetup(); updateSetup(); generateDeck(); show('setup');
+})();
+</script>
+</body>
+</html>
