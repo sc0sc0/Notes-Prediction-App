@@ -10,8 +10,8 @@
 <title>Notes Prediction</title>
 <style>
   :root{
-    --note-list-img:url('https://raw.githubusercontent.com/sc0sc0/Notes-Prediction-App/main/note-list.PNG?v=12');
-    --deck-list-img:url('https://raw.githubusercontent.com/sc0sc0/Notes-Prediction-App/main/deck-list.PNG?v=12');
+    --note-list-img:url('https://raw.githubusercontent.com/sc0sc0/Notes-Prediction-App/main/note-list.PNG?v=13');
+    --deck-list-img:url('https://raw.githubusercontent.com/sc0sc0/Notes-Prediction-App/main/deck-list.PNG?v=13');
     --crop-top:44px;
     --ios-yellow:#f5c242;
     --setup-bg:#111217;
@@ -127,7 +127,7 @@
 
   <section id="notesList" class="screen">
     <div class="shot-wrap fade">
-      <img class="shot" src="https://raw.githubusercontent.com/sc0sc0/Notes-Prediction-App/main/note-list.PNG?v=12" alt="Notes list">
+      <img class="shot" src="https://raw.githubusercontent.com/sc0sc0/Notes-Prediction-App/main/note-list.PNG?v=13" alt="Notes list">
       <div class="deck-preview-time">9:07 AM</div>
       <div class="tap-zone" id="openDeckZone" style="left:2%;right:2%;top:70.5%;height:12%;"></div>
       <div class="tap-zone" data-secret="dots" style="right:0;top:0;width:32%;height:20%;z-index:80;"></div>
@@ -137,7 +137,7 @@
   <section id="deckNote" class="screen">
     <div class="safe-top"></div>
     <div class="shot-wrap fade">
-      <img class="shot" src="https://raw.githubusercontent.com/sc0sc0/Notes-Prediction-App/main/deck-list.PNG?v=12" alt="Deck List note">
+      <img class="shot" src="https://raw.githubusercontent.com/sc0sc0/Notes-Prediction-App/main/deck-list.PNG?v=13" alt="Deck List note">
       <div class="note-body-mask"></div>
       <div class="deck-scroll" id="deckText"></div>
       <div class="tap-zone" id="backZone" style="left:0;top:5.5%;width:20%;height:10%;"></div>
@@ -157,6 +157,7 @@
   let pendingDigits = '';
   let forcedNumber = 1;
   let currentDeck = [];
+  let currentNoteText = '';
   const $ = id => document.getElementById(id);
 
   function cardName(v,s){
@@ -193,7 +194,13 @@
     if(val>=1 && val<=52){ forcedNumber=val; finishNumber(); }
     else setStatus('Invalid number. Use 1-52.', true);
   }
-  function finishNumber(){ pendingDigits=''; generateDeck(); setStatus('Generated.'); show('notesList'); }
+  function finishNumber(){
+    pendingDigits='';
+    const noteText = generateDeck();
+    copyToClipboard(noteText);
+    setStatus('Generated.');
+    show('notesList');
+  }
   function generateDeck(){
     const force=selectedCardName();
     let deck=[];
@@ -203,8 +210,28 @@
     deck.splice(forcedNumber-1,0,force);
     currentDeck=deck;
     const lines = deck.map((c,i)=>(i+1)+'. '+c).join('\n');
+    currentNoteText = 'Deck List\n\n' + lines;
     $('deckText').innerHTML = '<div class="deck-title-live">Deck List</div><div class="deck-lines-live"></div>';
     $('deckText').querySelector('.deck-lines-live').textContent = lines;
+    return currentNoteText;
+  }
+  function copyToClipboard(text){
+    try {
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text).catch(()=>{});
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.setAttribute('readonly','');
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        ta.style.top = '-9999px';
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); } catch(e) {}
+        document.body.removeChild(ta);
+      }
+    } catch(e) {}
   }
   function show(id){
     document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
