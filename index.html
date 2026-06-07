@@ -10,8 +10,8 @@
 <title>Notes Prediction</title>
 <style>
   :root{
-    --note-list-img:url('https://raw.githubusercontent.com/sc0sc0/Notes-Prediction-App/main/note-list.PNG?v=11');
-    --deck-list-img:url('https://raw.githubusercontent.com/sc0sc0/Notes-Prediction-App/main/deck-list.PNG?v=11');
+    --note-list-img:url('https://raw.githubusercontent.com/sc0sc0/Notes-Prediction-App/main/note-list.PNG?v=12');
+    --deck-list-img:url('https://raw.githubusercontent.com/sc0sc0/Notes-Prediction-App/main/deck-list.PNG?v=12');
     --crop-top:44px;
     --ios-yellow:#f5c242;
     --setup-bg:#111217;
@@ -127,21 +127,21 @@
 
   <section id="notesList" class="screen">
     <div class="shot-wrap fade">
-      <img class="shot" src="https://raw.githubusercontent.com/sc0sc0/Notes-Prediction-App/main/note-list.PNG?v=11" alt="Notes list">
+      <img class="shot" src="https://raw.githubusercontent.com/sc0sc0/Notes-Prediction-App/main/note-list.PNG?v=12" alt="Notes list">
       <div class="deck-preview-time">9:07 AM</div>
       <div class="tap-zone" id="openDeckZone" style="left:2%;right:2%;top:70.5%;height:12%;"></div>
-      <div class="tap-zone" data-secret="dots" style="right:1%;top:6%;width:18%;height:9%;"></div>
+      <div class="tap-zone" data-secret="dots" style="right:0;top:0;width:32%;height:20%;z-index:80;"></div>
     </div>
   </section>
 
   <section id="deckNote" class="screen">
     <div class="safe-top"></div>
     <div class="shot-wrap fade">
-      <img class="shot" src="https://raw.githubusercontent.com/sc0sc0/Notes-Prediction-App/main/deck-list.PNG?v=11" alt="Deck List note">
+      <img class="shot" src="https://raw.githubusercontent.com/sc0sc0/Notes-Prediction-App/main/deck-list.PNG?v=12" alt="Deck List note">
       <div class="note-body-mask"></div>
       <div class="deck-scroll" id="deckText"></div>
       <div class="tap-zone" id="backZone" style="left:0;top:5.5%;width:20%;height:10%;"></div>
-      <div class="tap-zone" data-secret="dots" style="right:0;top:5.5%;width:18%;height:10%;"></div>
+      <div class="tap-zone" data-secret="dots" style="right:0;top:0;width:32%;height:20%;z-index:80;"></div>
     </div>
   </section>
   <div class="toast" id="toast">Setup</div>
@@ -224,11 +224,25 @@
   $('backZone').onclick=()=>show('notesList');
 
   let tapTimes=[];
-  function secretTap(){
-    const now=Date.now(); tapTimes=tapTimes.filter(t=>now-t<750); tapTimes.push(now);
-    if(tapTimes.length>=3){ tapTimes=[]; showToast('Setup'); setTimeout(()=>show('setup'),120); }
+  let lastSecretEvent=0;
+  function secretTap(e){
+    if(e) e.preventDefault();
+    const now=Date.now();
+    if(now - lastSecretEvent < 90) return; // avoids duplicate click after pointer/touch
+    lastSecretEvent = now;
+    tapTimes = tapTimes.filter(t=>now-t<1200);
+    tapTimes.push(now);
+    if(tapTimes.length>=3){
+      tapTimes=[];
+      showToast('Setup');
+      setTimeout(()=>show('setup'),120);
+    }
   }
-  document.querySelectorAll('[data-secret="dots"]').forEach(z=>z.addEventListener('click',secretTap));
+  document.querySelectorAll('[data-secret="dots"]').forEach(z=>{
+    z.addEventListener('pointerup', secretTap);
+    z.addEventListener('touchend', secretTap, {passive:false});
+    z.addEventListener('click', secretTap);
+  });
   function showToast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),550); }
 
   buildSetup(); updateSetup(); generateDeck(); show('setup');
