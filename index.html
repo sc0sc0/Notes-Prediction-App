@@ -10,8 +10,8 @@
 <title>Notes Prediction</title>
 <style>
   :root{
-    --note-list-img:url('https://raw.githubusercontent.com/sc0sc0/Notes-Prediction-App/main/note-list.PNG?v=10');
-    --deck-list-img:url('https://raw.githubusercontent.com/sc0sc0/Notes-Prediction-App/main/deck-list.PNG?v=10');
+    --note-list-img:url('https://raw.githubusercontent.com/sc0sc0/Notes-Prediction-App/main/note-list.PNG?v=19');
+    --deck-list-img:url('https://raw.githubusercontent.com/sc0sc0/Notes-Prediction-App/main/deck-list.PNG?v=19');
     --crop-top:44px;
     --ios-yellow:#f5c242;
     --setup-bg:#111217;
@@ -119,7 +119,7 @@
 
   <section id="notesList" class="screen">
     <div class="shot-wrap fade">
-      <img class="shot" src="https://raw.githubusercontent.com/sc0sc0/Notes-Prediction-App/main/note-list.PNG?v=10" alt="Notes list">
+      <img class="shot" src="https://raw.githubusercontent.com/sc0sc0/Notes-Prediction-App/main/note-list.PNG?v=19" alt="Notes list">
       <div class="deck-preview-time">9:07 AM</div>
       <div class="tap-zone" id="openDeckZone" style="left:2%;right:2%;top:70.5%;height:12%;"></div>
       <div class="tap-zone" data-secret="dots" style="right:1%;top:6%;width:18%;height:9%;"></div>
@@ -129,7 +129,7 @@
   <section id="deckNote" class="screen">
     <div class="safe-top"></div>
     <div class="shot-wrap fade">
-      <img class="shot" src="https://raw.githubusercontent.com/sc0sc0/Notes-Prediction-App/main/deck-list.PNG?v=10" alt="Deck List note">
+      <img class="shot" src="https://raw.githubusercontent.com/sc0sc0/Notes-Prediction-App/main/deck-list.PNG?v=19" alt="Deck List note">
       <div class="note-body-mask"></div>
       <div class="deck-scroll" id="deckText"></div>
       <div class="tap-zone" id="backZone" style="left:0;top:5.5%;width:20%;height:10%;"></div>
@@ -154,7 +154,7 @@
   function cardName(v,s){
     const map={'2':'Two','3':'Three','4':'Four','5':'Five','6':'Six','7':'Seven','8':'Eight','9':'Nine','10':'Ten'};
     const value = map[v] || v;
-    return value + ' of ' + s;
+    return value + ' of ' + s.toLowerCase();
   }
   function selectedCardName(){ return cardName(selectedValue, selectedSuit); }
   function buildSetup(){
@@ -185,7 +185,7 @@
     if(val>=1 && val<=52){ forcedNumber=val; finishNumber(); }
     else setStatus('Invalid number. Use 1-52.', true);
   }
-  function finishNumber(){ pendingDigits=''; generateDeck(); setStatus('Generated.'); show('notesList'); }
+  function finishNumber(){ pendingDigits=''; const noteText = generateDeck(); copyPlainText(noteText); setStatus('Generated.'); show('notesList'); }
   function generateDeck(){
     const force=selectedCardName();
     let deck=[];
@@ -194,7 +194,27 @@
     for(let i=deck.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [deck[i],deck[j]]=[deck[j],deck[i]]; }
     deck.splice(forcedNumber-1,0,force);
     currentDeck=deck;
-    $('deckText').textContent=deck.map((c,i)=>(i+1)+'. '+c).join('\n');
+    const lines = deck.map((c,i)=>(i+1)+'. '+c).join('\n');
+    $('deckText').textContent = lines;
+    return 'Deck List\n\n' + lines;
+  }
+  function copyPlainText(text){
+    try {
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text).catch(()=>{});
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.setAttribute('readonly','');
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        ta.style.top = '-9999px';
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); } catch(e) {}
+        document.body.removeChild(ta);
+      }
+    } catch(e) {}
   }
   function show(id){
     document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
